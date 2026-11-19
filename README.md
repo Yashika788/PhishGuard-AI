@@ -4,19 +4,20 @@
 
 PhishGuard AI is a Deep Learning-based web application that analyzes URL structure and lexical characteristics to identify potentially phishing URLs using an Artificial Neural Network (ANN).
 
-The application extracts 32 deterministic URL-based features and uses a trained TensorFlow/Keras model to classify URLs as **Potential Phishing** or **Legitimate**.
+The application extracts **25 deterministic URL-based features** and uses a trained TensorFlow/Keras model to classify URLs as **Potential Phishing** or **Legitimate**.
 
 > **Disclaimer:** This is an educational URL-text classification project. It does not visit websites, inspect webpage content, perform DNS or reputation checks, or guarantee website safety. Model scores are not calibrated probabilities.
 
 ## ✨ Features
 
 - ANN-based phishing URL classification.
-- Extraction of 32 URL lexical and structural features (including entropy, suspicious extensions, brand names, and free-hosting detection).
-- Interactive Streamlit dashboard with a premium cybersecurity UI.
-- URL scanning with prediction score and auto-tuned threshold.
-- Scan history and live analytics for the current application session.
-- Model evaluation and performance visualizations.
-- Confusion matrix and training/validation graphs.
+- Extraction of 25 URL lexical and structural features.
+- Interactive Streamlit dashboard with a cybersecurity-themed UI.
+- URL scanning with phishing score and configurable decision threshold.
+- Scan history for the current application session.
+- Live scan analytics and visualizations.
+- Model evaluation and performance metrics.
+- Confusion matrix and training accuracy/loss graphs.
 
 ## 🧰 Technologies Used
 
@@ -27,7 +28,6 @@ The application extracts 32 deterministic URL-based features and uses a trained 
 - Streamlit
 - Matplotlib and Seaborn
 - Joblib
-- tldextract
 
 ## 📁 Project Structure
 
@@ -36,13 +36,16 @@ PhishGuard-AI/
 ├── assets/
 │   └── style.css
 ├── dataset/
-│   └── raw/
-│       └── url_features_extracted1.csv
+│   ├── raw/
+│   │   └── .gitkeep
+│   └── processed/
+│       └── .gitkeep
 ├── models/
 │   ├── phishing_model.keras
 │   ├── scaler.pkl
 │   └── metadata.json
 ├── notebooks/
+│   └── README.md
 ├── results/
 │   ├── classification_report.txt
 │   ├── confusion_matrix.png
@@ -50,6 +53,7 @@ PhishGuard-AI/
 │   ├── training_accuracy.png
 │   └── training_loss.png
 ├── src/
+│   ├── __init__.py
 │   ├── feature_extraction.py
 │   ├── data_pipeline.py
 │   ├── model.py
@@ -57,22 +61,37 @@ PhishGuard-AI/
 ├── app.py
 ├── train.py
 ├── requirements.txt
-└── README.md
+├── README.md
+└── .gitignore
 ```
 
 ## 📊 Dataset
 
-This project uses the **LegitPhish Dataset Version 2**.
+This project uses **LegitPhish Dataset Version 2**.
 
-- Original dataset file: `url_features_extracted1.csv`
+- Dataset file: `url_features_extracted1.csv`
 - Target column: `ClassLabel`
-- Label mapping:
-  - `0` = Phishing
-  - `1` = Legitimate
+- Original label mapping:
+  - `0.0` = Phishing
+  - `1.0` = Legitimate
 
-**Feature engineering:** The source CSV contains precomputed feature columns. This implementation extracts its own **32 deterministic URL-based features** from the original URL text and uses those features consistently during training and application inference. The precomputed columns from the CSV are not used as the ANN input.
+### Feature Engineering
 
-The dataset is cleaned by removing missing labels and duplicate URLs before model training.
+The original dataset contains precomputed feature columns. However, this implementation extracts its own **25 deterministic URL-based features** directly from URL text.
+
+The precomputed feature columns are not used as ANN input.
+
+The data pipeline performs:
+- Missing-label removal.
+- Duplicate URL removal.
+- Stratified train, validation and test splitting.
+- Feature scaling using training data.
+
+**Dataset availability:** The original CSV is excluded from this GitHub repository through `.gitignore`. Obtain the dataset separately and place it at:
+
+```text
+dataset/raw/url_features_extracted1.csv
+```
 
 ## 🧠 Deep Learning Architecture
 
@@ -80,7 +99,7 @@ The project uses a feed-forward Artificial Neural Network.
 
 | Layer | Configuration |
 |---|---|
-| Input | 32 URL features |
+| Input | 25 URL features |
 | Dense 1 | 128 neurons, ReLU |
 | Dropout | 0.30 |
 | Dense 2 | 64 neurons, ReLU |
@@ -90,32 +109,40 @@ The project uses a feed-forward Artificial Neural Network.
 
 **Optimizer:** Adam  
 **Loss Function:** Binary Crossentropy  
-**Training:** Early Stopping & ReduceLROnPlateau  
-**Class Imbalance:** Handled via class weights
+**Training:** Early Stopping
+
+The model produces a phishing score between 0 and 1. The application uses a decision threshold to classify URLs.
 
 ## ⚙️ Installation and Setup
 
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/Yashika788/PhishGuard-AI.git
 cd PhishGuard-AI
 ```
 
-Create a virtual environment:
+### 2. Create a virtual environment
 
 ```bash
 python3 -m venv venv
+```
+
+Activate it on macOS/Linux:
+
+```bash
 source venv/bin/activate
 ```
 
-Install dependencies:
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Place the dataset at:
+### 4. Add the dataset
+
+Place the downloaded dataset file at:
 
 ```text
 dataset/raw/url_features_extracted1.csv
@@ -123,23 +150,23 @@ dataset/raw/url_features_extracted1.csv
 
 ## 🚀 Train the Model
 
-Run the following command:
+Run:
 
 ```bash
 python train.py --data dataset/raw/url_features_extracted1.csv --label-column ClassLabel --phishing-value 0.0
 ```
 
-The training process performs:
+The training pipeline performs:
 
 1. Dataset loading and cleaning.
 2. Duplicate URL removal.
-3. Extraction of 32 URL features.
+3. Extraction of 25 URL-based features.
 4. Stratified train, validation and test splitting.
 5. Feature scaling.
 6. ANN model training with early stopping.
 7. Evaluation on the held-out test set.
-8. **Threshold tuning on the validation set** to maximize F1-score.
-9. Saving the trained model, scaler, metrics, metadata, and graphs.
+8. Validation-based threshold tuning.
+9. Saving the trained model, scaler, metadata, metrics and evaluation graphs.
 
 ## 🌐 Run the Application
 
@@ -149,34 +176,46 @@ Start the Streamlit application:
 streamlit run app.py
 ```
 
-Open the local URL displayed in the terminal (usually `http://localhost:8501`).
+Open the local URL displayed in the terminal, usually:
+
+```text
+http://localhost:8501
+```
 
 ## 📈 Model Evaluation
 
-The current held-out test evaluation produced:
+The current held-out random stratified test evaluation produced the following results:
 
-| Metric | Phishing Class | Legitimate Class |
+### Class-wise Metrics
+
+| Metric | Phishing | Legitimate |
 |---|---:|---:|
 | Precision | 99.96% | 99.76% |
 | Recall | 99.86% | 99.93% |
 | F1-Score | 99.91% | 99.85% |
 
-**Overall Metrics:**
+### Overall Metrics
+
 | Metric | Score |
 |---|---:|
 | Accuracy | 99.89% |
 | ROC-AUC | 99.999% |
-| Tuned Threshold | 0.65 |
+| Application Threshold | 0.65 |
+| Validation-tuned Threshold | 0.52 |
 
-These results are from the current random stratified test split. They should not be interpreted as proof of equivalent real-world performance. Domain overlap and dataset leakage may inflate random-split results.
+The application threshold and validation-tuned threshold are reported separately because they represent different values in the current evaluation output.
+
+> **Important:** These results come from a random stratified test split. They should not be interpreted as proof of equivalent real-world performance. Similar domains or related URLs across dataset splits may inflate evaluation scores.
 
 ### Evaluation Visualizations
+
+The project generates:
 
 - Confusion Matrix
 - Training and Validation Accuracy
 - Training and Validation Loss
 
-Generated files are stored in the `results/` directory.
+These files are stored in the `results/` directory.
 
 ## ⚠️ Limitations
 
@@ -191,18 +230,15 @@ A stronger evaluation should use domain-grouped or time-based splitting and an i
 
 ## 🔮 Future Improvements
 
-- Domain-aware and time-based evaluation.
+- Domain-aware and time-based model evaluation.
 - Comparison with Random Forest, Logistic Regression and XGBoost.
 - Feature explainability using SHAP.
 - Integration with trusted URL reputation services.
 - Persistent scan history and reporting.
+- Independent external dataset evaluation.
 
 ## 🎓 Project Domain
 
 **Deep Learning | Cybersecurity | Artificial Neural Networks | Phishing Detection**
 
 Developed as an academic project to explore the application of Deep Learning in cybersecurity.
-```
-
----
-
