@@ -1,5 +1,5 @@
 
-"""PhishGuard AI - Premium Cybersecurity Dashboard."""
+"""PhishGuard AI - Premium Cybersecurity Dashboard with Authentication."""
 
 from pathlib import Path
 from datetime import datetime
@@ -14,6 +14,14 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from src.feature_extraction import extract_feature_matrix
+from src.auth import (
+    init_db,
+    register_user,
+    authenticate_user,
+    save_scan,
+    get_user_scans,
+    delete_user_scans,
+)
 
 
 # =========================================================
@@ -45,28 +53,76 @@ st.set_page_config(
 
 
 # =========================================================
-# 3. DISPLAY HELPERS
+# 3. DATABASE INITIALIZATION
+# =========================================================
+
+init_db()
+
+
+# =========================================================
+# 4. SESSION STATE
+# =========================================================
+
+defaults = {
+    "authenticated": False,
+    "user_id": None,
+    "user_name": None,
+    "user_email": None,
+    "auth_view": False,
+    "auth_notice": "",
+    "pending_page": "Overview",
+    "navigation_widget": "Overview",
+    "navigation_target": None,
+    "scan_history": [],
+    "prediction_result": None,
+}
+
+for key, value in defaults.items():
+
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+# Apply pending navigation BEFORE creating the sidebar radio.
+
+if st.session_state.navigation_target is not None:
+
+    st.session_state.navigation_widget = (
+        st.session_state.navigation_target
+    )
+
+    st.session_state.navigation_target = None
+
+
+# =========================================================
+# 5. DISPLAY HELPERS
 # =========================================================
 
 def render_html(html):
+
     st.html(textwrap.dedent(html).strip())
 
 
 def format_percent(value):
+
     try:
         return f"{float(value):.2%}"
+
     except (TypeError, ValueError):
         return "N/A"
 
 
 def format_threshold(value):
+
     try:
         return f"{float(value):.2f}"
+
     except (TypeError, ValueError):
         return "N/A"
 
 
 def get_scan_counts(history):
+
     total = len(history)
 
     phishing = sum(
@@ -80,6 +136,7 @@ def get_scan_counts(history):
 
 
 def render_card(title, description, icon=""):
+
     render_html(
         f"""
         <div class="section-card">
@@ -97,6 +154,7 @@ def show_class_metrics(metrics, class_key, display_name):
     class_metrics = metrics.get(class_key)
 
     if not isinstance(class_metrics, dict):
+
         st.info(f"{display_name} metrics unavailable.")
         return
 
@@ -121,6 +179,7 @@ def show_class_metrics(metrics, class_key, display_name):
 
     try:
         support = f"{int(support):,}"
+
     except (TypeError, ValueError):
         support = "N/A"
 
@@ -128,19 +187,56 @@ def show_class_metrics(metrics, class_key, display_name):
 
 
 # =========================================================
-# 4. NAVIGATION CALLBACKS
+# 6. NAVIGATION CALLBACKS
 # =========================================================
 
 def navigate_to(destination):
-    st.session_state.navigation = destination
+
+    st.session_state.navigation_widget = destination
+
+
+def back_to_overview():
+
+    st.session_state.auth_view = False
+    st.session_state.pending_page = "Overview"
+    st.session_state.navigation_widget = "Overview"
+    st.session_state.prediction_result = None
+
+
+def logout_user():
+
+    st.session_state.authenticated = False
+
+    st.session_state.user_id = None
+    st.session_state.user_name = None
+    st.session_state.user_email = None
+
+    st.session_state.scan_history = []
+    st.session_state.prediction_result = None
+
+    st.session_state.auth_view = False
+    st.session_state.pending_page = "Overview"
+    st.session_state.navigation_widget = "Overview"
 
 
 def clear_previous_result():
+
     st.session_state.prediction_result = None
 
 
 # =========================================================
-# 5. ANALYTICS DONUT CHART
+# 7. LOAD USER HISTORY
+# =========================================================
+
+if st.session_state.authenticated:
+
+    st.session_state.scan_history = get_user_scans(
+        st.session_state.user_id
+    )
+
+
+# =========================================================
+# 8. ANALYTICS DONUT CHART
 # =========================================================
 
 def create_analytics_donut(phishing_count, legitimate_count):
@@ -205,6 +301,7 @@ def create_analytics_donut(phishing_count, legitimate_count):
         percentage = count / total * 100
 
         if percentage >= 5:
+
             angle = (wedge.theta1 + wedge.theta2) / 2
 
             x = 0.82 * math.cos(math.radians(angle))
@@ -224,14 +321,12 @@ def create_analytics_donut(phishing_count, legitimate_count):
     phishing_pct = phishing_count / total * 100
     legitimate_pct = legitimate_count / total * 100
 
-    legend_labels = [
-        f"Potential Phishing: {phishing_count:,} ({phishing_pct:.1f}%)",
-        f"Legitimate: {legitimate_count:,} ({legitimate_pct:.1f}%)",
-    ]
-
     ax.legend(
         wedges,
-        legend_labels,
+        [
+            f"Potential Phishing: {phishing_count:,} ({phishing_pct:.1f}%)",
+            f"Legitimate: {legitimate_count:,} ({legitimate_pct:.1f}%)",
+        ],
         loc="lower center",
         bbox_to_anchor=(0.5, -0.12),
         ncol=1,
@@ -247,29 +342,21 @@ def create_analytics_donut(phishing_count, legitimate_count):
 
 
 # =========================================================
-# 6. LOAD CSS
+# 9. LOAD CSS
 # =========================================================
 
 if CSS_PATH.exists():
+
     css_content = CSS_PATH.read_text(encoding="utf-8")
     st.html(f"<style>{css_content}</style>")
+
 else:
+
     st.warning("Custom CSS file not found.")
 
 
 # =========================================================
-# 7. SESSION STATE
-# =========================================================
-
-if "scan_history" not in st.session_state:
-    st.session_state.scan_history = []
-
-if "prediction_result" not in st.session_state:
-    st.session_state.prediction_result = None
-
-
-# =========================================================
-# 8. LOAD MODEL AND SCALER
+# 10. LOAD MODEL
 # =========================================================
 
 @st.cache_resource
@@ -285,25 +372,98 @@ def load_artifacts():
     loaded_scaler = joblib.load(SCALER_PATH)
 
     if META_PATH.exists():
+
         loaded_metadata = json.loads(
             META_PATH.read_text(encoding="utf-8")
         )
+
     else:
+
         loaded_metadata = {"threshold": 0.5}
 
     return loaded_model, loaded_scaler, loaded_metadata
 
 
-try:
-    model, scaler, metadata = load_artifacts()
+# =========================================================
+# 11. AUTHENTICATION ACTIONS
+# =========================================================
 
-except Exception as error:
-    st.error(f"Unable to load ANN model: {error}")
-    st.stop()
+def start_user_session(user):
+
+    st.session_state.authenticated = True
+
+    st.session_state.user_id = user["id"]
+    st.session_state.user_name = user["name"]
+    st.session_state.user_email = user["email"]
+
+    st.session_state.scan_history = get_user_scans(
+        user["id"]
+    )
+
+    st.session_state.auth_view = False
+    st.session_state.auth_notice = ""
+    st.session_state.prediction_result = None
+
+    # After login/signup, open Overview Dashboard.
+    st.session_state.pending_page = "Overview"
+    st.session_state.navigation_target = "Overview"
+
+    st.rerun()
+
+
+def login_user(email, password):
+
+    user = authenticate_user(email, password)
+
+    if user is None:
+
+        st.error("Invalid email address or password.")
+        return
+
+    start_user_session(user)
 
 
 # =========================================================
-# 9. SIDEBAR
+# 12. TOP HEADER AND LOGIN BUTTON
+# =========================================================
+
+header_left, header_right = st.columns(
+    [7, 2],
+    vertical_alignment="center",
+)
+
+with header_right:
+
+    if st.session_state.authenticated:
+
+        st.caption(
+            f"👤 {st.session_state.user_name}"
+        )
+
+        st.button(
+            "Logout ↗",
+            key="top_logout",
+            use_container_width=True,
+            on_click=logout_user,
+        )
+
+    else:
+
+        if st.button(
+            "🔐 Login / Sign Up",
+            key="top_login",
+            use_container_width=True,
+            type="primary",
+        ):
+
+            st.session_state.auth_view = True
+            st.session_state.pending_page = "Overview"
+
+            st.rerun()
+
+
+# =========================================================
+# 13. SIDEBAR
 # =========================================================
 
 with st.sidebar:
@@ -331,7 +491,7 @@ with st.sidebar:
             "Live Scan Analytics",
             "Model Evaluation",
         ],
-        key="navigation",
+        key="navigation_widget",
     )
 
     st.divider()
@@ -347,9 +507,18 @@ with st.sidebar:
     )
 
     st.write("")
+
     st.caption("Deep Learning | TensorFlow")
     st.caption("25 URL-based features")
     st.caption("URL-only analysis")
+
+    if st.session_state.authenticated:
+
+        st.divider()
+
+        st.caption(
+            f"Logged in as {st.session_state.user_email}"
+        )
 
     st.divider()
 
@@ -358,7 +527,7 @@ with st.sidebar:
 
 
 # =========================================================
-# 10. GLOBAL HERO HEADER
+# 14. GLOBAL HERO HEADER
 # =========================================================
 
 render_html(
@@ -402,7 +571,178 @@ st.caption(
 
 
 # =========================================================
-# 11. OVERVIEW DASHBOARD
+# 15. AUTHENTICATION SCREEN
+# =========================================================
+
+# Any protected page selection opens authentication.
+
+if not st.session_state.authenticated and page != "Overview":
+
+    st.session_state.pending_page = page
+    st.session_state.auth_view = True
+
+
+if st.session_state.auth_view and not st.session_state.authenticated:
+
+    st.markdown("---")
+
+    st.markdown(
+        "<h2 style='text-align:center;'>🔐 Account Access</h2>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        "<p style='text-align:center;color:#AEBED0;'>"
+        "Login or create an account to access PhishGuard AI features."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+
+    auth_left, auth_center, auth_right = st.columns(
+        [1, 1.5, 1]
+    )
+
+    with auth_center:
+
+        if st.session_state.auth_notice:
+
+            st.success(st.session_state.auth_notice)
+            st.session_state.auth_notice = ""
+
+        login_tab, signup_tab = st.tabs(
+            ["Login", "Sign Up"]
+        )
+
+        with login_tab:
+
+            st.markdown("### Welcome Back")
+
+            with st.form("login_form"):
+
+                login_email = st.text_input(
+                    "Email Address",
+                    placeholder="you@example.com",
+                )
+
+                login_password = st.text_input(
+                    "Password",
+                    type="password",
+                    placeholder="Enter your password",
+                )
+
+                login_submit = st.form_submit_button(
+                    "Login",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if login_submit:
+
+                if not login_email.strip() or not login_password:
+
+                    st.error(
+                        "Please enter your email and password."
+                    )
+
+                else:
+
+                    login_user(
+                        login_email,
+                        login_password,
+                    )
+
+        with signup_tab:
+
+            st.markdown("### Create Your Account")
+
+            with st.form("signup_form"):
+
+                signup_name = st.text_input(
+                    "Full Name",
+                    placeholder="Enter your name",
+                )
+
+                signup_email = st.text_input(
+                    "Email Address",
+                    placeholder="you@example.com",
+                )
+
+                signup_password = st.text_input(
+                    "Create Password",
+                    type="password",
+                    placeholder="Minimum 8 characters",
+                )
+
+                confirm_password = st.text_input(
+                    "Confirm Password",
+                    type="password",
+                    placeholder="Re-enter your password",
+                )
+
+                signup_submit = st.form_submit_button(
+                    "Create Account",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if signup_submit:
+
+                if not signup_name.strip():
+
+                    st.error("Please enter your full name.")
+
+                elif not signup_email.strip():
+
+                    st.error("Please enter your email address.")
+
+                elif signup_password != confirm_password:
+
+                    st.error("Passwords do not match.")
+
+                else:
+
+                    success, message = register_user(
+                        signup_name,
+                        signup_email,
+                        signup_password,
+                    )
+
+                    if success:
+
+                        # Automatically authenticate the new user.
+                        new_user = authenticate_user(
+                            signup_email,
+                            signup_password,
+                        )
+
+                        if new_user is not None:
+
+                            start_user_session(new_user)
+
+                        else:
+
+                            st.error(
+                                "Account created, but automatic login failed. "
+                                "Please login using your credentials."
+                            )
+
+                    else:
+
+                        st.error(message)
+
+        st.divider()
+
+        st.button(
+            "← Back to Public Overview",
+            use_container_width=True,
+            on_click=back_to_overview,
+        )
+
+    st.stop()
+
+
+# =========================================================
+# 16. OVERVIEW DASHBOARD
 # =========================================================
 
 if page == "Overview":
@@ -413,34 +753,32 @@ if page == "Overview":
         "Monitor URL screening activity and access your security tools."
     )
 
-    history = st.session_state.scan_history
+    if st.session_state.authenticated:
+
+        history = st.session_state.scan_history
+
+    else:
+
+        history = []
 
     total, phishing, legitimate = get_scan_counts(history)
-
-    # TOP STATISTICS
 
     st.markdown("### Security Overview")
 
     col1, col2, col3 = st.columns(3)
 
-    col1.metric(
-        "🌐 Total URLs Scanned",
-        f"{total:,}",
-    )
+    col1.metric("🌐 Total URLs Scanned", f"{total:,}")
+    col2.metric("⚠️ Potential Phishing", f"{phishing:,}")
+    col3.metric("✅ Legitimate Predictions", f"{legitimate:,}")
 
-    col2.metric(
-        "⚠️ Potential Phishing",
-        f"{phishing:,}",
-    )
+    if not st.session_state.authenticated:
 
-    col3.metric(
-        "✅ Legitimate Predictions",
-        f"{legitimate:,}",
-    )
+        st.info(
+            "You are viewing the public dashboard preview. "
+            "Login or create an account to use the security features."
+        )
 
     st.divider()
-
-    # QUICK ACCESS
 
     st.markdown("### Quick Access")
 
@@ -486,8 +824,6 @@ if page == "Overview":
 
     st.divider()
 
-    # LOWER DASHBOARD PANELS
-
     st.markdown("### Activity & Classification")
 
     left_panel, right_panel = st.columns(
@@ -502,7 +838,7 @@ if page == "Overview":
             <div class="dashboard-panel">
                 <div class="panel-heading">🕘 Recent Scans</div>
                 <div class="panel-description">
-                    Latest URL screening activity in this session.
+                    Latest URL screening activity.
                 </div>
             </div>
             """
@@ -521,15 +857,7 @@ if page == "Overview":
         else:
 
             st.info(
-                "No URLs scanned yet. Open URL Scanner to begin."
-            )
-
-            st.button(
-                "Start Your First Scan →",
-                key="first_scan_button",
-                use_container_width=True,
-                on_click=navigate_to,
-                args=("URL Scanner",),
+                "No URLs scanned yet. Login to start scanning."
             )
 
     with right_panel:
@@ -553,10 +881,12 @@ if page == "Overview":
             )
 
             if overview_fig is not None:
+
                 st.pyplot(
                     overview_fig,
                     use_container_width=True,
                 )
+
                 plt.close(overview_fig)
 
         else:
@@ -568,13 +898,12 @@ if page == "Overview":
 
     st.divider()
 
-    # SYSTEM INFORMATION
-
     st.markdown("### Detection Engine")
 
     info1, info2, info3 = st.columns(3)
 
     with info1:
+
         render_card(
             "ANN Architecture",
             "Artificial Neural Network-based classification.",
@@ -582,6 +911,7 @@ if page == "Overview":
         )
 
     with info2:
+
         render_card(
             "Feature Extraction",
             "25 numerical features extracted from URL text.",
@@ -589,18 +919,19 @@ if page == "Overview":
         )
 
     with info3:
+
         render_card(
-            "Session Analytics",
-            "Live statistics based on URLs scanned in this session.",
+            "User Analytics",
+            "Individual scan statistics for each registered user.",
             "📈",
         )
 
 
 # =========================================================
-# 12. URL SCANNER
+# 17. URL SCANNER
 # =========================================================
 
-elif page == "URL Scanner":
+elif page == "URL Scanner" and st.session_state.authenticated:
 
     st.title("🔍 Intelligent URL Scanner")
 
@@ -632,14 +963,19 @@ elif page == "URL Scanner":
 
             with st.spinner("Analyzing URL with ANN model..."):
 
+                model, scaler, metadata = load_artifacts()
+
                 cleaned_url = url.strip()
 
-                features = extract_feature_matrix([cleaned_url])
+                features = extract_feature_matrix(
+                    [cleaned_url]
+                )
 
                 if not isinstance(features, pd.DataFrame):
                     features = pd.DataFrame(features)
 
                 if features.empty:
+
                     raise ValueError(
                         "Feature extraction returned no features."
                     )
@@ -654,6 +990,7 @@ elif page == "URL Scanner":
                     expected_features is not None
                     and features.shape[1] != expected_features
                 ):
+
                     raise ValueError(
                         f"Expected {expected_features} features, "
                         f"received {features.shape[1]}."
@@ -666,7 +1003,9 @@ elif page == "URL Scanner":
                     verbose=0,
                 )
 
-                probability = float(prediction.reshape(-1)[0])
+                probability = float(
+                    prediction.reshape(-1)[0]
+                )
 
                 threshold = float(
                     metadata.get("threshold", 0.5)
@@ -684,36 +1023,55 @@ elif page == "URL Scanner":
 
                 st.session_state.prediction_result = result
 
-                st.session_state.scan_history.append(
-                    {
-                        "time": datetime.now().strftime(
-                            "%d-%m-%Y %H:%M:%S"
-                        ),
-                        "url": cleaned_url,
-                        "status": (
-                            "Potential Phishing"
-                            if is_phishing
-                            else "Legitimate"
-                        ),
-                        "score": f"{probability:.2%}",
-                        "phishing_score": probability * 100,
-                        "is_phishing": is_phishing,
-                    }
+                scan_record = {
+                    "time": datetime.now().strftime(
+                        "%d-%m-%Y %H:%M:%S"
+                    ),
+                    "url": cleaned_url,
+                    "status": (
+                        "Potential Phishing"
+                        if is_phishing
+                        else "Legitimate"
+                    ),
+                    "score": f"{probability:.2%}",
+                    "phishing_score": probability * 100,
+                    "is_phishing": is_phishing,
+                }
+
+                saved = save_scan(
+                    st.session_state.user_id,
+                    scan_record,
+                )
+
+                if not saved:
+
+                    st.error(
+                        "Scan completed, but history could not be saved."
+                    )
+
+                st.session_state.scan_history = get_user_scans(
+                    st.session_state.user_id
                 )
 
         except Exception as error:
 
             st.session_state.prediction_result = None
-            st.error(f"URL analysis failed: {error}")
+
+            st.error(
+                f"URL analysis failed: {error}"
+            )
 
     result = st.session_state.prediction_result
 
     if result is not None:
 
         st.divider()
+
         st.subheader("📊 Analysis Results")
 
-        st.markdown(f"**Analyzed URL:** `{result['url']}`")
+        st.markdown(
+            f"**Analyzed URL:** `{result['url']}`"
+        )
 
         col1, col2 = st.columns(2)
 
@@ -759,7 +1117,10 @@ elif page == "URL Scanner":
             )
 
             st.progress(
-                min(max(result["probability"], 0.0), 1.0)
+                min(
+                    max(result["probability"], 0.0),
+                    1.0,
+                )
             )
 
         st.caption(
@@ -797,15 +1158,15 @@ elif page == "URL Scanner":
 
 
 # =========================================================
-# 13. SCAN HISTORY
+# 18. SCAN HISTORY
 # =========================================================
 
-elif page == "Scan History":
+elif page == "Scan History" and st.session_state.authenticated:
 
     st.title("🕘 URL Scan History")
 
     st.caption(
-        "Review URLs analyzed during the current application session."
+        "Review URLs analyzed using your account."
     )
 
     history = st.session_state.scan_history
@@ -813,26 +1174,44 @@ elif page == "Scan History":
     if history:
 
         st.metric(
-            "Total Scans in This Session",
+            "Total Scans",
             f"{len(history):,}",
         )
 
         history_df = pd.DataFrame(history[::-1])
 
         st.dataframe(
-            history_df[["time", "url", "status", "score"]],
+            history_df[
+                ["time", "url", "status", "score"]
+            ],
             use_container_width=True,
             hide_index=True,
         )
 
         st.divider()
 
-        if st.button("🗑️ Clear Scan History"):
+        if st.button("🗑️ Clear My Scan History"):
 
-            st.session_state.scan_history = []
-            st.session_state.prediction_result = None
+            deleted = delete_user_scans(
+                st.session_state.user_id
+            )
 
-            st.rerun()
+            if deleted:
+
+                st.session_state.scan_history = []
+                st.session_state.prediction_result = None
+
+                st.success(
+                    "Your scan history has been cleared."
+                )
+
+                st.rerun()
+
+            else:
+
+                st.error(
+                    "Unable to clear scan history."
+                )
 
     else:
 
@@ -842,16 +1221,15 @@ elif page == "Scan History":
 
 
 # =========================================================
-# 14. LIVE SCAN ANALYTICS
+# 19. LIVE SCAN ANALYTICS
 # =========================================================
 
-elif page == "Live Scan Analytics":
+elif page == "Live Scan Analytics" and st.session_state.authenticated:
 
     st.title("📊 Live Scan Analytics")
 
     st.caption(
-        "Real-time classification statistics for URLs scanned "
-        "during the current application session."
+        "Classification statistics for URLs scanned using your account."
     )
 
     history = st.session_state.scan_history
@@ -864,7 +1242,10 @@ elif page == "Live Scan Analytics":
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric("🌐 Total Scans", f"{total:,}")
+        col1.metric(
+            "🌐 Total Scans",
+            f"{total:,}",
+        )
 
         col2.metric(
             "⚠️ Potential Phishing",
@@ -1025,8 +1406,6 @@ elif page == "Live Scan Analytics":
             """
         )
 
-        st.write("")
-
         st.button(
             "Open URL Scanner →",
             use_container_width=True,
@@ -1036,10 +1415,10 @@ elif page == "Live Scan Analytics":
 
 
 # =========================================================
-# 15. MODEL EVALUATION
+# 20. MODEL EVALUATION
 # =========================================================
 
-elif page == "Model Evaluation":
+elif page == "Model Evaluation" and st.session_state.authenticated:
 
     st.title("🧠 ANN Model Evaluation")
 
@@ -1070,15 +1449,29 @@ elif page == "Model Evaluation":
 
             else:
 
-                # Only this container is targeted by the
-                # smaller Model Evaluation metric CSS rules.
                 with st.container(key="evaluation_metrics"):
 
                     scalar_metrics = [
-                        ("Accuracy", metrics.get("accuracy"), "percent"),
-                        ("ROC AUC", metrics.get("roc_auc"), "percent"),
-                        ("Tuned F1", metrics.get("tuned_f1"), "percent"),
-                        ("Threshold", metrics.get("threshold"), "threshold"),
+                        (
+                            "Accuracy",
+                            metrics.get("accuracy"),
+                            "percent",
+                        ),
+                        (
+                            "ROC AUC",
+                            metrics.get("roc_auc"),
+                            "percent",
+                        ),
+                        (
+                            "Tuned F1",
+                            metrics.get("tuned_f1"),
+                            "percent",
+                        ),
+                        (
+                            "Threshold",
+                            metrics.get("threshold"),
+                            "threshold",
+                        ),
                         (
                             "Tuned Threshold",
                             metrics.get("tuned_threshold"),
@@ -1087,15 +1480,20 @@ elif page == "Model Evaluation":
                     ]
 
                     available = [
-                        item for item in scalar_metrics
+                        item
+                        for item in scalar_metrics
                         if item[1] is not None
                     ]
 
                     if available:
 
-                        cols = st.columns(min(len(available), 5))
+                        cols = st.columns(
+                            min(len(available), 5)
+                        )
 
-                        for index, (name, value, kind) in enumerate(available):
+                        for index, (name, value, kind) in enumerate(
+                            available
+                        ):
 
                             display = (
                                 format_percent(value)
@@ -1124,11 +1522,15 @@ elif page == "Model Evaluation":
 
         except (OSError, json.JSONDecodeError) as error:
 
-            st.error(f"Unable to read metrics: {error}")
+            st.error(
+                f"Unable to read metrics: {error}"
+            )
 
     else:
 
-        st.warning("Evaluation metrics are not available.")
+        st.warning(
+            "Evaluation metrics are not available."
+        )
 
     st.divider()
 
@@ -1160,13 +1562,15 @@ elif page == "Model Evaluation":
 
         else:
 
-            st.warning(f"Graph not available: {path.name}")
+            st.warning(
+                f"Graph not available: {path.name}"
+            )
 
         st.divider()
 
 
 # =========================================================
-# 16. FOOTER
+# 21. FOOTER
 # =========================================================
 
 render_html(

@@ -31,3 +31,7 @@ dataset/processed/*
 
 # Keep trained model files
 # Keep evaluation results and graphs
+
+# User authentication database
+*.db
+*.sqlite3
