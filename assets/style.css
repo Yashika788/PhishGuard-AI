@@ -1,391 +1,540 @@
-/* =====================================================
-   PHISHGUARD AI - PREMIUM CYBERSECURITY THEME
-   ===================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-/* MAIN BACKGROUND */
-
-.stApp {
-    background:
-        radial-gradient(
-            ellipse at 10% 0%,
-            rgba(14, 165, 233, 0.13),
-            transparent 35%
-        ),
-        radial-gradient(
-            ellipse at 95% 10%,
-            rgba(37, 99, 235, 0.12),
-            transparent 35%
-        ),
-        linear-gradient(
-            135deg,
-            #080f1d,
-            #0b1423 55%,
-            #080f1d
-        ) !important;
-
-    color: #e2e8f0;
+:root {
+    --bg-main: #080f1c;
+    --bg-sidebar: #0b1424;
+    --bg-card: #14243a;
+    --border: #2b4059;
+    --text-main: #f4f7fc;
+    --text-muted: #b5c4d5;
+    --teal: #19c99a;
+    --red: #ff5263;
 }
 
+/* GLOBAL - NO LAYOUT SIZE CHANGES */
 
-/* MAIN CONTENT */
+html, body, .stApp {
+    font-family: 'Inter', sans-serif !important;
+    background: var(--bg-main) !important;
+    color: var(--text-main) !important;
+}
 
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    background: var(--bg-main) !important;
+}
+
+[data-testid="stMainBlockContainer"],
 .block-container {
-    max-width: 1450px;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
+    max-width: 1900px !important;
+    padding: 3rem 4rem 4rem !important;
 }
 
+/* MAIN HEADINGS */
 
-/* TYPOGRAPHY */
-
-h1, h2, h3 {
-    color: #f8fafc !important;
-    font-weight: 750 !important;
-    letter-spacing: -0.5px;
-}
-
+[data-testid="stMain"] h1,
 h1 {
-    font-size: 2.4rem !important;
+    font-size: 3.2rem !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    letter-spacing: -1.3px !important;
 }
 
+[data-testid="stMain"] h2,
 h2 {
-    font-size: 1.8rem !important;
+    font-size: 2.5rem !important;
+    line-height: 1.3 !important;
+    font-weight: 850 !important;
+    color: #f4f7fc !important;
 }
 
+[data-testid="stMain"] h3,
 h3 {
-    font-size: 1.25rem !important;
+    font-size: 1.9rem !important;
+    font-weight: 800 !important;
+    color: #f4f7fc !important;
 }
 
-p, label {
-    color: #cbd5e1;
+[data-testid="stMain"] h4,
+h4 {
+    font-size: 1.55rem !important;
+    font-weight: 750 !important;
+    color: #f4f7fc !important;
 }
 
+/* NORMAL TEXT */
 
-/* SIDEBAR */
+[data-testid="stMain"] .stMarkdown p,
+[data-testid="stMain"] .stText,
+[data-testid="stMain"] li {
+    font-size: 1.3rem !important;
+    line-height: 1.8 !important;
+    color: var(--text-muted);
+}
+
+[data-testid="stCaptionContainer"] p {
+    font-size: 1.12rem !important;
+    line-height: 1.7 !important;
+}
+
+/* SIDEBAR - SAME DIMENSIONS */
 
 section[data-testid="stSidebar"] {
-    background: linear-gradient(
-        180deg,
-        #101e32,
-        #0a1423
-    ) !important;
-
-    border-right: 1px solid rgba(56, 189, 248, 0.22);
+    background: var(--bg-sidebar) !important;
+    border-right: 1px solid #263950 !important;
+    min-width: 300px !important;
 }
 
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    color: #38bdf8 !important;
+section[data-testid="stSidebar"] > div {
+    padding: 1.8rem 1.3rem !important;
 }
 
-section[data-testid="stSidebar"] [data-testid="stRadio"] label {
-    color: #dbeafe !important;
-    font-weight: 600;
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] span {
+    font-size: 1.2rem !important;
 }
 
-section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
-    color: #38bdf8 !important;
+section[data-testid="stSidebar"] [role="radiogroup"] {
+    gap: 0.8rem !important;
 }
 
+section[data-testid="stSidebar"] [role="radiogroup"] label {
+    min-height: 54px !important;
+    padding: 0.9rem !important;
+    border-radius: 12px !important;
+}
 
-/* HERO BANNER */
+section[data-testid="stSidebar"] [role="radiogroup"] label p {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+}
+
+/* SIDEBAR BRAND */
+
+.sidebar-brand {
+    text-align: center;
+    padding: 1.5rem 0 2rem;
+}
+
+.sidebar-logo {
+    font-size: 3.5rem !important;
+    margin-bottom: 0.8rem;
+}
+
+.sidebar-name {
+    font-size: 1.8rem !important;
+    font-weight: 900 !important;
+    color: white !important;
+}
+
+.sidebar-tagline {
+    color: var(--teal) !important;
+    font-size: 0.95rem !important;
+    font-weight: 850 !important;
+    letter-spacing: 2px;
+    margin-top: 0.7rem;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 0.7rem 1.1rem;
+    border-radius: 30px;
+    background: rgba(25, 201, 154, 0.12);
+    border: 1px solid rgba(25, 201, 154, 0.4);
+    color: #4ce0b6 !important;
+    font-size: 1rem !important;
+    font-weight: 850 !important;
+}
+
+/* HERO - SAME BOX DIMENSIONS */
 
 .hero {
     background:
-        radial-gradient(
-            circle at 85% 20%,
-            rgba(14, 165, 233, 0.18),
-            transparent 35%
-        ),
-        linear-gradient(
-            120deg,
-            #10243d,
-            #123b59,
-            #10243d
-        );
+        radial-gradient(circle at 85% 15%, rgba(25, 201, 154, 0.2), transparent 35%),
+        linear-gradient(120deg, #12253e 0%, #12443f 100%) !important;
+    border: 1px solid #286c60;
+    border-radius: 25px;
+    padding: 3.5rem !important;
+    min-height: 320px;
+    margin: 0.5rem 0 2.5rem;
+    box-shadow: 0 20px 55px rgba(0,0,0,0.22);
+}
 
-    border: 1px solid rgba(56, 189, 248, 0.38);
-    border-radius: 20px;
-    padding: 32px;
-    margin-bottom: 22px;
-
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+.hero-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.8rem;
 }
 
 .hero-label {
-    color: #38bdf8 !important;
-    font-size: 12px;
-    font-weight: 800;
+    color: #7ce9cb !important;
+    font-size: 1.1rem !important;
+    font-weight: 850 !important;
     letter-spacing: 2px;
 }
 
+.hero-indicator {
+    color: #65e4bd !important;
+    font-size: 1.05rem !important;
+    font-weight: 850 !important;
+}
+
 .hero-title {
-    color: #f8fafc !important;
-    font-size: 34px;
-    font-weight: 850;
-    margin: 9px 0;
+    color: white !important;
+    font-size: clamp(3.5rem, 5vw, 4.8rem) !important;
+    line-height: 1.12 !important;
+    font-weight: 900 !important;
+    letter-spacing: -2px;
+    margin: 0.5rem 0 1.2rem;
 }
 
 .hero-description {
-    color: #cbd5e1 !important;
-    font-size: 15px;
-    margin-bottom: 0;
+    color: #d0dce8 !important;
+    font-size: 1.5rem !important;
+    line-height: 1.75 !important;
+    max-width: 950px;
 }
 
+.hero-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 1.8rem;
+}
+
+.hero-bottom span {
+    color: #d9f7ee !important;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 0.75rem 1rem;
+    border-radius: 9px;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+}
+
+/* METRIC CARDS - SAME BOX SIZE */
+
+[data-testid="stMetric"] {
+    background: linear-gradient(145deg, #192e48, #101e32) !important;
+    border: 1px solid #30465f !important;
+    border-radius: 20px !important;
+    padding: 2rem 1.8rem !important;
+    min-height: 175px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+    transition: all 0.2s ease;
+}
+
+[data-testid="stMetric"]:hover {
+    border-color: var(--teal) !important;
+    transform: translateY(-4px);
+}
+
+[data-testid="stMetricLabel"],
+[data-testid="stMetricLabel"] p {
+    color: #d3dfed !important;
+    font-size: 1.35rem !important;
+    font-weight: 750 !important;
+}
+
+[data-testid="stMetricValue"],
+[data-testid="stMetricValue"] div {
+    color: #ffffff !important;
+    font-size: 3.5rem !important;
+    font-weight: 900 !important;
+    line-height: 1.3 !important;
+}
+
+[data-testid="stMetricDelta"],
+[data-testid="stMetricDelta"] div {
+    font-size: 1.15rem !important;
+}
+
+/* QUICK ACCESS CARDS - SAME BOX SIZE */
+
+.section-card {
+    background: linear-gradient(145deg, #192e48, #101e32) !important;
+    border: 1px solid #30465f;
+    border-radius: 20px;
+    padding: 2rem !important;
+    min-height: 195px;
+    height: 100%;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+}
+
+.section-card:hover {
+    background: #1b3550 !important;
+    border-color: var(--teal);
+    transform: translateY(-4px);
+}
+
+.section-card h3 {
+    font-size: 1.9rem !important;
+    margin: 0 0 1rem;
+}
+
+.section-card p {
+    font-size: 1.3rem !important;
+    line-height: 1.75 !important;
+}
+
+/* DASHBOARD PANELS - SAME BOX SIZE */
+
+.dashboard-panel {
+    background: linear-gradient(145deg, #162b44, #101e32);
+    border: 1px solid #30465f;
+    border-radius: 20px;
+    padding: 2rem !important;
+    min-height: 280px;
+}
+
+.panel-heading {
+    color: #f4f7fc !important;
+    font-size: 1.7rem !important;
+    font-weight: 850 !important;
+}
+
+.panel-description {
+    color: #c2cfdf !important;
+    font-size: 1.2rem !important;
+    line-height: 1.7;
+}
 
 /* BUTTONS */
 
 .stButton > button {
-    background: linear-gradient(
-        135deg,
-        #0284c7,
-        #2563eb
-    );
-
-    color: #ffffff !important;
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    border-radius: 11px;
-    padding: 0.65rem 1.2rem;
-    font-weight: 700;
-
-    transition: all 0.25s ease;
-
-    box-shadow: 0 4px 18px rgba(2, 132, 199, 0.2);
+    background: linear-gradient(110deg, #126454, #168b72) !important;
+    color: white !important;
+    border: 1px solid #26977e !important;
+    border-radius: 12px !important;
+    min-height: 56px !important;
+    padding: 0.9rem 1.5rem !important;
+    font-size: 1.3rem !important;
+    font-weight: 800 !important;
+    transition: all 0.2s ease;
 }
 
 .stButton > button:hover {
-    background: linear-gradient(
-        135deg,
-        #0ea5e9,
-        #3b82f6
-    );
-
-    border-color: #38bdf8;
+    background: linear-gradient(110deg, #16816d, #1aa889) !important;
+    border-color: #49dfb8 !important;
     transform: translateY(-2px);
-
-    box-shadow: 0 7px 24px rgba(14, 165, 233, 0.3);
 }
 
-
-/* INPUT FIELDS */
+/* INPUTS */
 
 .stTextInput input,
-.stTextArea textarea {
-    background: #111e30 !important;
-    color: #f8fafc !important;
-    border: 1px solid #334b67 !important;
-    border-radius: 11px !important;
-    min-height: 48px;
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"] {
+    background: #101e31 !important;
+    color: white !important;
+    border: 1px solid #354b65 !important;
+    border-radius: 12px !important;
+    font-size: 1.3rem !important;
 }
 
-.stTextInput input:focus,
-.stTextArea textarea:focus {
-    border-color: #38bdf8 !important;
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15) !important;
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #a2b2c5 !important;
 }
 
+/* INPUT LABELS */
 
-/* METRIC CARDS */
-
-div[data-testid="stMetric"] {
-    background: linear-gradient(
-        145deg,
-        #14243a,
-        #101c2d
-    );
-
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    padding: 20px;
-    border-radius: 16px;
-    min-height: 110px;
-
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
-
-    transition: all 0.25s ease;
+[data-testid="stWidgetLabel"] p,
+[data-testid="stMain"] label {
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
 }
 
-div[data-testid="stMetric"]:hover {
-    border-color: rgba(56, 189, 248, 0.6);
-    transform: translateY(-3px);
+/* RESULTS */
+
+.result-phishing,
+.result-safe {
+    border-radius: 18px;
+    padding: 2rem !important;
+    min-height: 200px;
 }
-
-div[data-testid="stMetricLabel"] {
-    color: #94a3b8 !important;
-}
-
-div[data-testid="stMetricValue"] {
-    color: #38bdf8 !important;
-    font-weight: 800;
-}
-
-
-/* CUSTOM SECTION CARDS */
-
-.section-card {
-    background: linear-gradient(
-        145deg,
-        #14243a,
-        #101c2d
-    );
-
-    border: 1px solid rgba(56, 189, 248, 0.22);
-    border-radius: 16px;
-    padding: 22px;
-
-    box-shadow: 0 7px 22px rgba(0, 0, 0, 0.18);
-
-    transition: all 0.25s ease;
-}
-
-.section-card:hover {
-    border-color: rgba(56, 189, 248, 0.55);
-    transform: translateY(-2px);
-}
-
-.small-muted {
-    color: #94a3b8 !important;
-    font-size: 13px;
-}
-
-
-/* STATUS LABEL */
-
-.status-pill {
-    display: inline-block;
-    background: rgba(34, 197, 94, 0.12);
-    color: #4ade80 !important;
-    border: 1px solid rgba(34, 197, 94, 0.35);
-    border-radius: 30px;
-    padding: 6px 13px;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-
-/* RESULT CARDS */
 
 .result-phishing {
-    background: rgba(239, 68, 68, 0.10);
-    border: 1px solid rgba(248, 113, 113, 0.45);
-    border-radius: 14px;
-    padding: 18px;
+    background: rgba(255,82,99,0.1);
+    border: 1px solid rgba(255,82,99,0.6);
 }
 
 .result-safe {
-    background: rgba(34, 197, 94, 0.10);
-    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: rgba(25,201,154,0.1);
+    border: 1px solid rgba(25,201,154,0.55);
+}
+
+.card-eyebrow {
+    font-size: 1.05rem !important;
+    font-weight: 850;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+/* TABLES */
+
+[data-testid="stDataFrame"] {
+    border: 1px solid #30465f;
     border-radius: 14px;
-    padding: 18px;
-}
-
-
-/* EXPANDERS */
-
-div[data-testid="stExpander"] {
-    background: #111c2e;
-    border: 1px solid #293f59;
-    border-radius: 13px;
-}
-
-
-/* DATAFRAMES */
-
-div[data-testid="stDataFrame"] {
-    border: 1px solid #29415c;
-    border-radius: 12px;
     overflow: hidden;
 }
 
+[data-testid="stDataFrame"] * {
+    font-size: 1.2rem !important;
+}
+
+/* EXPANDERS */
+
+[data-testid="stExpander"] {
+    background: #101e32 !important;
+    border: 1px solid #30465f !important;
+    border-radius: 14px !important;
+}
+
+[data-testid="stExpander"] summary {
+    font-size: 1.3rem !important;
+    font-weight: 750 !important;
+}
 
 /* ALERTS */
 
-div[data-testid="stAlert"] {
-    border-radius: 13px;
-    border: 1px solid rgba(56, 189, 248, 0.2);
+[data-testid="stAlert"] {
+    border-radius: 14px !important;
 }
 
-
-/* PROGRESS BAR */
-
-.stProgress > div > div > div > div {
-    background: linear-gradient(
-        90deg,
-        #0284c7,
-        #38bdf8
-    );
-
-    border-radius: 20px;
+[data-testid="stAlert"] p {
+    font-size: 1.2rem !important;
+    line-height: 1.7 !important;
 }
 
+/* PROGRESS */
 
-/* SELECT BOXES */
-
-div[data-baseweb="select"] > div {
-    background: #111e30;
-    border-color: #334b67;
-    border-radius: 10px;
+.stProgress > div > div > div {
+    background: var(--teal);
 }
 
-
-/* TABS */
-
-.stTabs [data-baseweb="tab"] {
-    color: #94a3b8;
-    font-weight: 650;
-}
-
-.stTabs [aria-selected="true"] {
-    color: #38bdf8 !important;
-}
-
-
-/* CHARTS AND IMAGES */
-
-.stImage img {
-    border-radius: 13px;
-    border: 1px solid rgba(56, 189, 248, 0.2);
-}
-
-
-/* DIVIDERS */
+/* SPACING - UNCHANGED */
 
 hr {
-    border-color: rgba(56, 189, 248, 0.18);
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
+    border-color: #30445c !important;
+    margin: 2.3rem 0 !important;
 }
 
+[data-testid="stHorizontalBlock"] {
+    gap: 1.5rem !important;
+}
 
 /* FOOTER */
 
-footer {
-    visibility: hidden;
+.footer {
+    text-align: center;
+    padding: 3rem 0 1rem;
+    border-top: 1px solid #30445c;
+    margin-top: 3rem;
 }
 
+.footer-brand {
+    color: white !important;
+    font-size: 1.7rem !important;
+    font-weight: 900 !important;
+}
 
-/* RESPONSIVE DESIGN */
+.footer-description {
+    color: #c2cfdf !important;
+    font-size: 1.2rem !important;
+}
 
-@media (max-width: 768px) {
+.footer-version {
+    color: var(--teal) !important;
+    font-size: 1rem !important;
+    font-weight: 850 !important;
+    letter-spacing: 1.5px;
+}
 
+/* RESPONSIVE - TEXT ONLY ADJUSTMENTS */
+
+@media (max-width: 1100px) {
+    [data-testid="stMainBlockContainer"],
     .block-container {
-        padding: 1rem;
-    }
-
-    h1 {
-        font-size: 1.8rem !important;
-    }
-
-    div[data-testid="stMetric"] {
-        padding: 13px;
+        padding: 2rem 1.8rem !important;
     }
 
     .hero {
-        padding: 22px;
+        padding: 2.4rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    [data-testid="stMainBlockContainer"],
+    .block-container {
+        padding: 1.4rem 1rem 2rem !important;
+    }
+
+    .hero {
+        padding: 1.7rem !important;
+        min-height: auto;
     }
 
     .hero-title {
-        font-size: 26px;
+        font-size: 2.5rem !important;
+    }
+
+    [data-testid="stMain"] h1 {
+        font-size: 2.3rem !important;
+    }
+
+    [data-testid="stMain"] h2 {
+        font-size: 1.9rem !important;
+    }
+
+    [data-testid="stMetricValue"],
+    [data-testid="stMetricValue"] div {
+        font-size: 2.5rem !important;
+    }
+
+    [data-testid="stMain"] .stMarkdown p {
+        font-size: 1.1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 2.1rem !important;
+    }
+
+    .hero-description {
+        font-size: 1.15rem !important;
+    }
+}
+
+/* MODEL EVALUATION - SLIGHTLY SMALLER METRIC TEXT ONLY */
+
+.st-key-evaluation_metrics [data-testid="stMetricValue"],
+.st-key-evaluation_metrics [data-testid="stMetricValue"] div {
+    font-size: 2.7rem !important;
+}
+
+.st-key-evaluation_metrics [data-testid="stMetricLabel"],
+.st-key-evaluation_metrics [data-testid="stMetricLabel"] p {
+    font-size: 1.12rem !important;
+}
+
+.st-key-evaluation_metrics [data-testid="stMetricDelta"],
+.st-key-evaluation_metrics [data-testid="stMetricDelta"] div {
+    font-size: 0.95rem !important;
+}
+
+/* MODEL EVALUATION - MOBILE METRIC TEXT */
+
+@media (max-width: 768px) {
+    .st-key-evaluation_metrics [data-testid="stMetricValue"],
+    .st-key-evaluation_metrics [data-testid="stMetricValue"] div {
+        font-size: 2.3rem !important;
     }
 }

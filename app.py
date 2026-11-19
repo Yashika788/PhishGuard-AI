@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 import textwrap
+import math
 
 import joblib
 import pandas as pd
@@ -44,43 +45,25 @@ st.set_page_config(
 
 
 # =========================================================
-# 3. HTML AND DISPLAY HELPERS
+# 3. DISPLAY HELPERS
 # =========================================================
 
 def render_html(html):
-    """Render a trusted HTML fragment."""
     st.html(textwrap.dedent(html).strip())
 
 
 def format_percent(value):
-    if value is None:
-        return "N/A"
-
     try:
         return f"{float(value):.2%}"
     except (TypeError, ValueError):
-        return str(value)
+        return "N/A"
 
 
 def format_threshold(value):
-    if value is None:
-        return "N/A"
-
     try:
         return f"{float(value):.2f}"
     except (TypeError, ValueError):
-        return str(value)
-
-
-def render_card(title, description):
-    render_html(
-        f"""
-        <div class="section-card">
-            <h3>{title}</h3>
-            <p class="small-muted">{description}</p>
-        </div>
-        """
-    )
+        return "N/A"
 
 
 def get_scan_counts(history):
@@ -96,16 +79,25 @@ def get_scan_counts(history):
     return total, phishing, legitimate
 
 
-def show_class_metrics(metrics, class_key, display_name):
+def render_card(title, description, icon=""):
+    render_html(
+        f"""
+        <div class="section-card">
+            <h3>{icon} {title}</h3>
+            <p>{description}</p>
+        </div>
+        """
+    )
 
-    class_metrics = metrics.get(class_key)
+
+def show_class_metrics(metrics, class_key, display_name):
 
     st.markdown(f"#### {display_name}")
 
+    class_metrics = metrics.get(class_key)
+
     if not isinstance(class_metrics, dict):
-        st.info(
-            f"{display_name} metrics are not available."
-        )
+        st.info(f"{display_name} metrics unavailable.")
         return
 
     col1, col2, col3, col4 = st.columns(4)
@@ -128,51 +120,145 @@ def show_class_metrics(metrics, class_key, display_name):
     support = class_metrics.get("support")
 
     try:
-        support_display = (
-            f"{int(support):,}"
-            if support is not None
-            else "N/A"
-        )
+        support = f"{int(support):,}"
     except (TypeError, ValueError):
-        support_display = str(support)
+        support = "N/A"
 
-    col4.metric("Support", support_display)
+    col4.metric("Support", support)
 
 
 # =========================================================
-# 4. NAVIGATION CALLBACK
+# 4. NAVIGATION CALLBACKS
 # =========================================================
 
 def navigate_to(destination):
-    """
-    Change the navigation radio value through a callback.
-
-    Streamlit executes this callback before the next script run,
-    so the widget state can safely be updated here.
-    """
     st.session_state.navigation = destination
 
 
+def clear_previous_result():
+    st.session_state.prediction_result = None
+
+
 # =========================================================
-# 5. LOAD CUSTOM CSS
+# 5. ANALYTICS DONUT CHART
+# =========================================================
+
+def create_analytics_donut(phishing_count, legitimate_count):
+
+    total = phishing_count + legitimate_count
+
+    if total == 0:
+        return None
+
+    phishing_color = "#FF5263"
+    legitimate_color = "#19C99A"
+    background_color = "#14243A"
+    text_color = "#F0F4FA"
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    fig.patch.set_facecolor(background_color)
+    ax.set_facecolor(background_color)
+
+    values = [phishing_count, legitimate_count]
+    colors = [phishing_color, legitimate_color]
+
+    wedges, _ = ax.pie(
+        values,
+        colors=colors,
+        startangle=90,
+        counterclock=False,
+        wedgeprops={
+            "width": 0.34,
+            "edgecolor": background_color,
+            "linewidth": 3,
+        },
+    )
+
+    ax.text(
+        0,
+        0.08,
+        f"{total:,}",
+        ha="center",
+        va="center",
+        fontsize=28,
+        fontweight="bold",
+        color=text_color,
+    )
+
+    ax.text(
+        0,
+        -0.18,
+        "TOTAL SCANS",
+        ha="center",
+        va="center",
+        fontsize=10,
+        fontweight="bold",
+        color="#AEBED0",
+    )
+
+    for wedge, count in zip(wedges, values):
+
+        if count == 0:
+            continue
+
+        percentage = count / total * 100
+
+        if percentage >= 5:
+            angle = (wedge.theta1 + wedge.theta2) / 2
+
+            x = 0.82 * math.cos(math.radians(angle))
+            y = 0.82 * math.sin(math.radians(angle))
+
+            ax.text(
+                x,
+                y,
+                f"{percentage:.1f}%",
+                ha="center",
+                va="center",
+                fontsize=11,
+                fontweight="bold",
+                color="white",
+            )
+
+    phishing_pct = phishing_count / total * 100
+    legitimate_pct = legitimate_count / total * 100
+
+    legend_labels = [
+        f"Potential Phishing: {phishing_count:,} ({phishing_pct:.1f}%)",
+        f"Legitimate: {legitimate_count:,} ({legitimate_pct:.1f}%)",
+    ]
+
+    ax.legend(
+        wedges,
+        legend_labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.12),
+        ncol=1,
+        frameon=False,
+        fontsize=10,
+        labelcolor=text_color,
+    )
+
+    ax.axis("equal")
+    fig.tight_layout(pad=2)
+
+    return fig
+
+
+# =========================================================
+# 6. LOAD CSS
 # =========================================================
 
 if CSS_PATH.exists():
-
-    css_content = CSS_PATH.read_text(
-        encoding="utf-8"
-    )
-
+    css_content = CSS_PATH.read_text(encoding="utf-8")
     st.html(f"<style>{css_content}</style>")
-
 else:
-    st.warning(
-        "Custom CSS file not found: assets/style.css"
-    )
+    st.warning("Custom CSS file not found.")
 
 
 # =========================================================
-# 6. SESSION STATE
+# 7. SESSION STATE
 # =========================================================
 
 if "scan_history" not in st.session_state:
@@ -182,66 +268,42 @@ if "prediction_result" not in st.session_state:
     st.session_state.prediction_result = None
 
 
-def clear_previous_result():
-    st.session_state.prediction_result = None
-
-
 # =========================================================
-# 7. LOAD ANN MODEL AND SCALER
+# 8. LOAD MODEL AND SCALER
 # =========================================================
 
 @st.cache_resource
 def load_artifacts():
 
     if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"Trained ANN model not found: {MODEL_PATH}"
-        )
+        raise FileNotFoundError(f"Model not found: {MODEL_PATH}")
 
     if not SCALER_PATH.exists():
-        raise FileNotFoundError(
-            f"Scaler file not found: {SCALER_PATH}"
-        )
+        raise FileNotFoundError(f"Scaler not found: {SCALER_PATH}")
 
-    loaded_model = tf.keras.models.load_model(
-        MODEL_PATH
-    )
-
-    loaded_scaler = joblib.load(
-        SCALER_PATH
-    )
+    loaded_model = tf.keras.models.load_model(MODEL_PATH)
+    loaded_scaler = joblib.load(SCALER_PATH)
 
     if META_PATH.exists():
-
         loaded_metadata = json.loads(
             META_PATH.read_text(encoding="utf-8")
         )
-
     else:
         loaded_metadata = {"threshold": 0.5}
 
-    return (
-        loaded_model,
-        loaded_scaler,
-        loaded_metadata
-    )
+    return loaded_model, loaded_scaler, loaded_metadata
 
 
 try:
-
     model, scaler, metadata = load_artifacts()
 
 except Exception as error:
-
-    st.error(
-        f"Unable to load ANN model or scaler: {error}"
-    )
-
+    st.error(f"Unable to load ANN model: {error}")
     st.stop()
 
 
 # =========================================================
-# 8. SIDEBAR NAVIGATION
+# 9. SIDEBAR
 # =========================================================
 
 with st.sidebar:
@@ -285,7 +347,6 @@ with st.sidebar:
     )
 
     st.write("")
-
     st.caption("Deep Learning | TensorFlow")
     st.caption("25 URL-based features")
     st.caption("URL-only analysis")
@@ -297,7 +358,7 @@ with st.sidebar:
 
 
 # =========================================================
-# 9. HERO HEADER
+# 10. GLOBAL HERO HEADER
 # =========================================================
 
 render_html(
@@ -341,71 +402,83 @@ st.caption(
 
 
 # =========================================================
-# 10. OVERVIEW PAGE
+# 11. OVERVIEW DASHBOARD
 # =========================================================
 
 if page == "Overview":
 
-    st.subheader("Security Dashboard")
+    st.title("Security Dashboard")
 
     st.caption(
-        "A quick overview of your URL scanning activity."
+        "Monitor URL screening activity and access your security tools."
     )
 
     history = st.session_state.scan_history
 
-    total_scans, phishing_count, legitimate_count = (
-        get_scan_counts(history)
-    )
+    total, phishing, legitimate = get_scan_counts(history)
+
+    # TOP STATISTICS
+
+    st.markdown("### Security Overview")
 
     col1, col2, col3 = st.columns(3)
 
     col1.metric(
         "🌐 Total URLs Scanned",
-        total_scans
+        f"{total:,}",
     )
 
     col2.metric(
         "⚠️ Potential Phishing",
-        phishing_count
+        f"{phishing:,}",
     )
 
     col3.metric(
         "✅ Legitimate Predictions",
-        legitimate_count
+        f"{legitimate:,}",
     )
 
     st.divider()
 
-    st.subheader("Quick Access")
+    # QUICK ACCESS
 
-    col1, col2 = st.columns(2)
+    st.markdown("### Quick Access")
 
-    with col1:
+    st.caption(
+        "Choose a tool to continue your security analysis."
+    )
+
+    quick_col1, quick_col2 = st.columns(2)
+
+    with quick_col1:
 
         render_card(
-            "🔍 URL Scanner",
-            "Analyze website URLs using the trained ANN "
-            "model and inspect extracted URL features."
+            "URL Scanner",
+            "Submit a URL and analyze its extracted features "
+            "using the trained Artificial Neural Network.",
+            "🔍",
         )
 
         st.button(
-            "Open URL Scanner",
+            "Open URL Scanner →",
+            key="overview_scanner_button",
             use_container_width=True,
             on_click=navigate_to,
             args=("URL Scanner",),
         )
 
-    with col2:
+    with quick_col2:
 
         render_card(
-            "🧠 Model Evaluation",
-            "Explore accuracy, loss, evaluation metrics "
-            "and the confusion matrix."
+            "Model Evaluation",
+            "Explore classification metrics, training curves, "
+            "validation performance and the confusion matrix.",
+            "🧠",
         )
 
         st.button(
-            "View Model Evaluation",
+            "View Model Evaluation →",
+            key="overview_evaluation_button",
             use_container_width=True,
             on_click=navigate_to,
             args=("Model Evaluation",),
@@ -413,60 +486,132 @@ if page == "Overview":
 
     st.divider()
 
-    st.subheader("Recent Scans")
+    # LOWER DASHBOARD PANELS
 
-    if history:
+    st.markdown("### Activity & Classification")
 
-        recent_df = pd.DataFrame(
-            history[-5:][::-1]
+    left_panel, right_panel = st.columns(
+        [1.25, 1],
+        vertical_alignment="top",
+    )
+
+    with left_panel:
+
+        render_html(
+            """
+            <div class="dashboard-panel">
+                <div class="panel-heading">🕘 Recent Scans</div>
+                <div class="panel-description">
+                    Latest URL screening activity in this session.
+                </div>
+            </div>
+            """
         )
 
-        st.dataframe(
-            recent_df[
-                ["time", "url", "status", "score"]
-            ],
-            use_container_width=True,
-            hide_index=True,
+        if history:
+
+            recent_df = pd.DataFrame(history[-5:][::-1])
+
+            st.dataframe(
+                recent_df[["time", "url", "status", "score"]],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        else:
+
+            st.info(
+                "No URLs scanned yet. Open URL Scanner to begin."
+            )
+
+            st.button(
+                "Start Your First Scan →",
+                key="first_scan_button",
+                use_container_width=True,
+                on_click=navigate_to,
+                args=("URL Scanner",),
+            )
+
+    with right_panel:
+
+        render_html(
+            """
+            <div class="dashboard-panel">
+                <div class="panel-heading">📊 Classification Distribution</div>
+                <div class="panel-description">
+                    Breakdown of phishing and legitimate predictions.
+                </div>
+            </div>
+            """
         )
 
-    else:
+        if total > 0:
 
-        st.info(
-            "No URLs scanned yet. "
-            "Open URL Scanner to begin."
+            overview_fig = create_analytics_donut(
+                phishing,
+                legitimate,
+            )
+
+            if overview_fig is not None:
+                st.pyplot(
+                    overview_fig,
+                    use_container_width=True,
+                )
+                plt.close(overview_fig)
+
+        else:
+
+            st.info(
+                "Classification statistics will appear here "
+                "after your first URL scan."
+            )
+
+    st.divider()
+
+    # SYSTEM INFORMATION
+
+    st.markdown("### Detection Engine")
+
+    info1, info2, info3 = st.columns(3)
+
+    with info1:
+        render_card(
+            "ANN Architecture",
+            "Artificial Neural Network-based classification.",
+            "🧠",
+        )
+
+    with info2:
+        render_card(
+            "Feature Extraction",
+            "25 numerical features extracted from URL text.",
+            "⚙️",
+        )
+
+    with info3:
+        render_card(
+            "Session Analytics",
+            "Live statistics based on URLs scanned in this session.",
+            "📈",
         )
 
 
 # =========================================================
-# 11. URL SCANNER PAGE
+# 12. URL SCANNER
 # =========================================================
 
 elif page == "URL Scanner":
 
-    st.subheader("🔍 Intelligent URL Scanner")
+    st.title("🔍 Intelligent URL Scanner")
 
     st.caption(
-        "Analyze suspicious URLs using the trained "
-        "Artificial Neural Network."
+        "Analyze suspicious URLs using the trained ANN model."
     )
 
-    render_html(
-        """
-        <div class="section-card">
-
-            <div class="card-eyebrow">
-                SCAN ENGINE
-            </div>
-
-            <h3>Enter URL for Security Analysis</h3>
-
-            <p class="small-muted">
-                The ANN model extracts lexical and structural
-                URL features to generate a phishing classification.
-            </p>
-
-        </div>
-        """
+    render_card(
+        "SCAN ENGINE",
+        "Enter a website URL to perform intelligent security analysis.",
+        "🛡️",
     )
 
     url = st.text_input(
@@ -485,53 +630,43 @@ elif page == "URL Scanner":
 
         try:
 
-            with st.spinner(
-                "Analyzing URL with ANN model..."
-            ):
+            with st.spinner("Analyzing URL with ANN model..."):
 
                 cleaned_url = url.strip()
 
-                features = extract_feature_matrix(
-                    [cleaned_url]
-                )
+                features = extract_feature_matrix([cleaned_url])
 
                 if not isinstance(features, pd.DataFrame):
                     features = pd.DataFrame(features)
 
                 if features.empty:
                     raise ValueError(
-                        "URL feature extraction returned no features."
+                        "Feature extraction returned no features."
                     )
 
                 expected_features = getattr(
                     scaler,
                     "n_features_in_",
-                    None
+                    None,
                 )
 
                 if (
                     expected_features is not None
                     and features.shape[1] != expected_features
                 ):
-
                     raise ValueError(
-                        f"Feature mismatch: scaler expects "
-                        f"{expected_features} features, but extraction "
-                        f"returned {features.shape[1]}."
+                        f"Expected {expected_features} features, "
+                        f"received {features.shape[1]}."
                     )
 
-                scaled_features = scaler.transform(
-                    features
-                )
+                scaled_features = scaler.transform(features)
 
                 prediction = model.predict(
                     scaled_features,
-                    verbose=0
+                    verbose=0,
                 )
 
-                probability = float(
-                    prediction.reshape(-1)[0]
-                )
+                probability = float(prediction.reshape(-1)[0])
 
                 threshold = float(
                     metadata.get("threshold", 0.5)
@@ -569,22 +704,16 @@ elif page == "URL Scanner":
         except Exception as error:
 
             st.session_state.prediction_result = None
-
-            st.error(
-                f"URL analysis failed: {error}"
-            )
+            st.error(f"URL analysis failed: {error}")
 
     result = st.session_state.prediction_result
 
     if result is not None:
 
         st.divider()
-
         st.subheader("📊 Analysis Results")
 
-        st.markdown(
-            f"**Analyzed URL:** `{result['url']}`"
-        )
+        st.markdown(f"**Analyzed URL:** `{result['url']}`")
 
         col1, col2 = st.columns(2)
 
@@ -595,18 +724,13 @@ elif page == "URL Scanner":
                 render_html(
                     """
                     <div class="result-phishing">
-
                         <div class="card-eyebrow">
                             SECURITY WARNING
                         </div>
-
                         <h3>⚠️ Potential Phishing</h3>
-
-                        <p class="small-muted">
-                            The model detected phishing-related
-                            URL patterns.
+                        <p>
+                            The model detected phishing-related URL patterns.
                         </p>
-
                     </div>
                     """
                 )
@@ -616,18 +740,13 @@ elif page == "URL Scanner":
                 render_html(
                     """
                     <div class="result-safe">
-
                         <div class="card-eyebrow">
                             SCAN RESULT
                         </div>
-
                         <h3>✅ Legitimate Prediction</h3>
-
-                        <p class="small-muted">
-                            No phishing pattern was detected
-                            by this model.
+                        <p>
+                            No phishing pattern was detected by this model.
                         </p>
-
                     </div>
                     """
                 )
@@ -636,14 +755,11 @@ elif page == "URL Scanner":
 
             st.metric(
                 "Model Phishing Score",
-                f"{result['probability']:.2%}"
+                f"{result['probability']:.2%}",
             )
 
             st.progress(
-                min(
-                    max(result["probability"], 0.0),
-                    1.0
-                )
+                min(max(result["probability"], 0.0), 1.0)
             )
 
         st.caption(
@@ -653,9 +769,7 @@ elif page == "URL Scanner":
 
         st.divider()
 
-        st.subheader(
-            "📈 Individual URL Feature Analysis"
-        )
+        st.subheader("📈 Individual URL Feature Analysis")
 
         feature_df = result["features"]
 
@@ -670,12 +784,10 @@ elif page == "URL Scanner":
 
             st.bar_chart(
                 feature_chart,
-                y_label="Extracted Feature Value"
+                y_label="Extracted Feature Value",
             )
 
-            with st.expander(
-                "View All Extracted Features"
-            ):
+            with st.expander("View All Extracted Features"):
 
                 st.dataframe(
                     feature_df,
@@ -683,20 +795,18 @@ elif page == "URL Scanner":
                     hide_index=True,
                 )
 
-        else:
-
-            st.warning(
-                "No URL features available for visualization."
-            )
-
 
 # =========================================================
-# 12. SCAN HISTORY PAGE
+# 13. SCAN HISTORY
 # =========================================================
 
 elif page == "Scan History":
 
-    st.subheader("🕘 URL Scan History")
+    st.title("🕘 URL Scan History")
+
+    st.caption(
+        "Review URLs analyzed during the current application session."
+    )
 
     history = st.session_state.scan_history
 
@@ -704,17 +814,13 @@ elif page == "Scan History":
 
         st.metric(
             "Total Scans in This Session",
-            len(history)
+            f"{len(history):,}",
         )
 
-        history_df = pd.DataFrame(
-            history[::-1]
-        )
+        history_df = pd.DataFrame(history[::-1])
 
         st.dataframe(
-            history_df[
-                ["time", "url", "status", "score"]
-            ],
+            history_df[["time", "url", "status", "score"]],
             use_container_width=True,
             hide_index=True,
         )
@@ -731,21 +837,21 @@ elif page == "Scan History":
     else:
 
         st.info(
-            "No scan history available. "
-            "Analyze a URL to create your first record."
+            "No scan history available. Analyze a URL to create your first record."
         )
 
 
 # =========================================================
-# 13. LIVE SCAN ANALYTICS PAGE
+# 14. LIVE SCAN ANALYTICS
 # =========================================================
 
 elif page == "Live Scan Analytics":
 
-    st.subheader("📊 Live Scan Analytics")
+    st.title("📊 Live Scan Analytics")
 
     st.caption(
-        "Monitor URL predictions generated during the current session."
+        "Real-time classification statistics for URLs scanned "
+        "during the current application session."
     )
 
     history = st.session_state.scan_history
@@ -754,58 +860,116 @@ elif page == "Live Scan Analytics":
 
         live_df = pd.DataFrame(history)
 
-        total_scans, phishing_count, legitimate_count = (
-            get_scan_counts(history)
-        )
+        total, phishing, legitimate = get_scan_counts(history)
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric("🌐 Total Scans", total_scans)
-        col2.metric("⚠️ Potential Phishing", phishing_count)
-        col3.metric("✅ Legitimate URLs", legitimate_count)
+        col1.metric("🌐 Total Scans", f"{total:,}")
+
+        col2.metric(
+            "⚠️ Potential Phishing",
+            f"{phishing:,}",
+            delta=f"{phishing / total * 100:.1f}% of scans",
+            delta_color="inverse",
+        )
+
+        col3.metric(
+            "✅ Legitimate URLs",
+            f"{legitimate:,}",
+            delta=f"{legitimate / total * 100:.1f}% of scans",
+        )
 
         st.divider()
 
         st.subheader("Classification Distribution")
 
-        labels = ["Phishing", "Legitimate"]
-
-        values = [
-            phishing_count,
-            legitimate_count
-        ]
-
-        fig, ax = plt.subplots(figsize=(7, 4))
-
-        ax.pie(
-            values,
-            labels=labels,
-            autopct="%1.1f%%" if total_scans else None,
-            startangle=90,
-            wedgeprops={
-                "width": 0.42,
-                "edgecolor": "#0b1423",
-            },
+        chart_col, info_col = st.columns(
+            [1.5, 1],
+            vertical_alignment="center",
         )
 
-        ax.set_title(
-            "Phishing vs Legitimate URLs"
-        )
+        with chart_col:
 
-        ax.axis("equal")
+            donut_fig = create_analytics_donut(
+                phishing,
+                legitimate,
+            )
 
-        fig.patch.set_alpha(0)
+            if donut_fig is not None:
 
-        st.pyplot(
-            fig,
-            use_container_width=True
-        )
+                st.pyplot(
+                    donut_fig,
+                    use_container_width=True,
+                )
 
-        plt.close(fig)
+                plt.close(donut_fig)
+
+        with info_col:
+
+            st.markdown("### Scan Breakdown")
+
+            phishing_pct = phishing / total * 100
+            legitimate_pct = legitimate / total * 100
+
+            render_html(
+                f"""
+                <div style="padding: 1rem 0;">
+                    <div style="
+                        font-size: 1rem;
+                        font-weight: 800;
+                        color: #FF5263;
+                    ">
+                        🔴 POTENTIAL PHISHING
+                    </div>
+
+                    <div style="
+                        font-size: 2.5rem;
+                        font-weight: 900;
+                        color: #FF5263;
+                    ">
+                        {phishing:,}
+                    </div>
+
+                    <div style="color:#AEBED0; font-size:1rem;">
+                        {phishing_pct:.2f}% of total scans
+                    </div>
+                </div>
+                """
+            )
+
+            st.progress(phishing / total)
+
+            render_html(
+                f"""
+                <div style="padding: 1rem 0;">
+                    <div style="
+                        font-size: 1rem;
+                        font-weight: 800;
+                        color: #19C99A;
+                    ">
+                        🟢 LEGITIMATE URLS
+                    </div>
+
+                    <div style="
+                        font-size: 2.5rem;
+                        font-weight: 900;
+                        color: #19C99A;
+                    ">
+                        {legitimate:,}
+                    </div>
+
+                    <div style="color:#AEBED0; font-size:1rem;">
+                        {legitimate_pct:.2f}% of total scans
+                    </div>
+                </div>
+                """
+            )
+
+            st.progress(legitimate / total)
 
         st.divider()
 
-        st.subheader("URL-wise Phishing Score")
+        st.subheader("📈 URL-wise Phishing Scores")
 
         score_df = live_df[
             ["url", "phishing_score"]
@@ -822,7 +986,7 @@ elif page == "Live Scan Analytics":
 
         st.bar_chart(
             score_chart,
-            y_label="Model Phishing Score (%)"
+            y_label="Model Phishing Score (%)",
         )
 
         st.caption(
@@ -833,39 +997,59 @@ elif page == "Live Scan Analytics":
 
         st.subheader("Complete Scan Analytics")
 
+        display_df = live_df[
+            ["time", "url", "status", "score"]
+        ].iloc[::-1]
+
         st.dataframe(
-            live_df[
-                ["time", "url", "status", "score"]
-            ],
+            display_df,
             use_container_width=True,
             hide_index=True,
         )
 
     else:
 
-        st.info(
-            "No scan data available yet. "
-            "Open URL Scanner and analyze URLs."
+        render_html(
+            """
+            <div class="dashboard-panel" style="
+                text-align:center;
+                padding:3.5rem 2rem;
+            ">
+                <div style="font-size:3rem;">📊</div>
+                <h3>No Scan Data Available</h3>
+                <p>
+                    Start scanning URLs to generate your live
+                    classification analytics.
+                </p>
+            </div>
+            """
+        )
+
+        st.write("")
+
+        st.button(
+            "Open URL Scanner →",
+            use_container_width=True,
+            on_click=navigate_to,
+            args=("URL Scanner",),
         )
 
 
 # =========================================================
-# 14. MODEL EVALUATION PAGE
+# 15. MODEL EVALUATION
 # =========================================================
 
 elif page == "Model Evaluation":
 
-    st.subheader("🧠 ANN Model Evaluation")
+    st.title("🧠 ANN Model Evaluation")
 
     st.caption(
-        "Training and testing performance of the "
-        "Artificial Neural Network."
+        "Training and testing performance of the Artificial Neural Network."
     )
 
     st.info(
         "These are fixed model evaluation results. "
-        "Scanning individual URLs does not retrain the model "
-        "or change these graphs."
+        "Scanning URLs does not retrain the model."
     )
 
     st.divider()
@@ -877,196 +1061,112 @@ elif page == "Model Evaluation":
         try:
 
             metrics = json.loads(
-                METRICS_PATH.read_text(
-                    encoding="utf-8"
-                )
+                METRICS_PATH.read_text(encoding="utf-8")
             )
 
-            if not isinstance(metrics, dict) or not metrics:
+            if not isinstance(metrics, dict):
 
-                st.warning(
-                    "No evaluation metrics found in metrics.json."
-                )
+                st.warning("Invalid metrics format.")
 
             else:
 
-                scalar_metrics = [
-                    (
-                        "Accuracy",
-                        metrics.get("accuracy"),
-                        "percent"
-                    ),
-                    (
-                        "ROC AUC",
-                        metrics.get("roc_auc"),
-                        "percent"
-                    ),
-                    (
-                        "Tuned F1",
-                        metrics.get("tuned_f1"),
-                        "percent"
-                    ),
-                    (
-                        "Threshold",
-                        metrics.get("threshold"),
-                        "threshold"
-                    ),
-                    (
-                        "Tuned Threshold",
-                        metrics.get("tuned_threshold"),
-                        "threshold"
-                    ),
-                ]
+                # Only this container is targeted by the
+                # smaller Model Evaluation metric CSS rules.
+                with st.container(key="evaluation_metrics"):
 
-                available_metrics = [
-                    item
-                    for item in scalar_metrics
-                    if item[1] is not None
-                ]
+                    scalar_metrics = [
+                        ("Accuracy", metrics.get("accuracy"), "percent"),
+                        ("ROC AUC", metrics.get("roc_auc"), "percent"),
+                        ("Tuned F1", metrics.get("tuned_f1"), "percent"),
+                        ("Threshold", metrics.get("threshold"), "threshold"),
+                        (
+                            "Tuned Threshold",
+                            metrics.get("tuned_threshold"),
+                            "threshold",
+                        ),
+                    ]
 
-                if available_metrics:
+                    available = [
+                        item for item in scalar_metrics
+                        if item[1] is not None
+                    ]
 
-                    metric_columns = st.columns(
-                        min(len(available_metrics), 5)
+                    if available:
+
+                        cols = st.columns(min(len(available), 5))
+
+                        for index, (name, value, kind) in enumerate(available):
+
+                            display = (
+                                format_percent(value)
+                                if kind == "percent"
+                                else format_threshold(value)
+                            )
+
+                            cols[index % len(cols)].metric(
+                                name,
+                                display,
+                            )
+
+                    show_class_metrics(
+                        metrics,
+                        "phishing",
+                        "⚠️ Phishing Class",
                     )
 
-                    for index, (
-                        name,
-                        value,
-                        value_type
-                    ) in enumerate(available_metrics):
+                    st.divider()
 
-                        display_value = (
-                            format_percent(value)
-                            if value_type == "percent"
-                            else format_threshold(value)
-                        )
-
-                        metric_columns[
-                            index % len(metric_columns)
-                        ].metric(
-                            name,
-                            display_value
-                        )
-
-                else:
-
-                    st.warning(
-                        "No scalar evaluation metrics were found."
-                    )
-
-                st.divider()
-
-                st.subheader("Class-wise Performance")
-
-                show_class_metrics(
-                    metrics,
-                    "phishing",
-                    "⚠️ Phishing Class"
-                )
-
-                st.divider()
-
-                show_class_metrics(
-                    metrics,
-                    "legitimate",
-                    "✅ Legitimate Class"
-                )
-
-                if metrics.get("tuned_f1") is not None:
-
-                    st.caption(
-                        "Tuned F1 is the F1 score associated "
-                        "with the selected decision threshold."
+                    show_class_metrics(
+                        metrics,
+                        "legitimate",
+                        "✅ Legitimate Class",
                     )
 
         except (OSError, json.JSONDecodeError) as error:
 
-            st.error(
-                f"Unable to read evaluation metrics: {error}"
+            st.error(f"Unable to read metrics: {error}")
+
+    else:
+
+        st.warning("Evaluation metrics are not available.")
+
+    st.divider()
+
+    graph_files = [
+        (
+            "📈 Training and Validation Accuracy",
+            RESULTS_DIR / "training_accuracy.png",
+        ),
+        (
+            "📉 Training and Validation Loss",
+            RESULTS_DIR / "training_loss.png",
+        ),
+        (
+            "🎯 Confusion Matrix",
+            RESULTS_DIR / "confusion_matrix.png",
+        ),
+    ]
+
+    for title, path in graph_files:
+
+        st.subheader(title)
+
+        if path.exists():
+
+            st.image(
+                str(path),
+                use_container_width=True,
             )
 
-        except Exception as error:
+        else:
 
-            st.error(
-                f"Unexpected error while displaying metrics: {error}"
-            )
+            st.warning(f"Graph not available: {path.name}")
 
-    else:
-
-        st.warning(
-            f"Evaluation metrics are not available: {METRICS_PATH}"
-        )
-
-    st.divider()
-
-    st.subheader("📈 Model Accuracy Graph")
-
-    accuracy_path = (
-        RESULTS_DIR / "training_accuracy.png"
-    )
-
-    if accuracy_path.exists():
-
-        st.image(
-            str(accuracy_path),
-            caption="Training and Validation Accuracy",
-            use_container_width=True,
-        )
-
-    else:
-
-        st.warning(
-            "Model accuracy graph is not available."
-        )
-
-    st.divider()
-
-    st.subheader("📉 Model Loss Graph")
-
-    loss_path = (
-        RESULTS_DIR / "training_loss.png"
-    )
-
-    if loss_path.exists():
-
-        st.image(
-            str(loss_path),
-            caption="Training and Validation Loss",
-            use_container_width=True,
-        )
-
-    else:
-
-        st.warning(
-            "Model loss graph is not available."
-        )
-
-    st.divider()
-
-    st.subheader("🎯 Confusion Matrix")
-
-    confusion_path = (
-        RESULTS_DIR / "confusion_matrix.png"
-    )
-
-    if confusion_path.exists():
-
-        st.image(
-            str(confusion_path),
-            caption="ANN Model Test Dataset Confusion Matrix",
-            use_container_width=True,
-        )
-
-    else:
-
-        st.warning(
-            "Confusion matrix is not available."
-        )
+        st.divider()
 
 
 # =========================================================
-# 15. FOOTER
+# 16. FOOTER
 # =========================================================
 
 render_html(
