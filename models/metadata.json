@@ -1,0 +1,62 @@
+{
+  "url_column": "URL",
+  "label_column": "ClassLabel",
+  "rows": 100872,
+  "feature_names": [
+    "url_length",
+    "hostname_length",
+    "path_length",
+    "query_length",
+    "count_dots",
+    "count_hyphens",
+    "count_underscores",
+    "count_slashes",
+    "count_question_marks",
+    "count_equal_signs",
+    "count_at",
+    "count_ampersands",
+    "count_percent",
+    "count_digits",
+    "count_letters",
+    "digit_ratio",
+    "special_char_ratio",
+    "url_entropy",
+    "https",
+    "has_ip_address",
+    "has_port",
+    "subdomain_count",
+    "domain_length",
+    "tld_length",
+    "path_depth",
+    "has_suspicious_word",
+    "has_suspicious_extension",
+    "has_shortener_domain",
+    "has_hyphen_in_domain",
+    "has_brand_name",
+    "is_free_hosting",
+    "has_multiple_subdomains"
+  ],
+  "threshold": 0.65,
+  "positive_class": "phishing",
+  "negative_class": "legitimate",
+  "test_samples": 20175,
+  "metrics": {
+    "threshold": 0.65,
+    "tuned_threshold": 0.52,
+    "tuned_f1": 0.9991337900622096,
+    "accuracy": 0.9988599752168525,
+    "phishing": {
+      "precision": 0.9996058647327762,
+      "recall": 0.9985825655563431,
+      "f1_score": 0.9990939531219224,
+      "support": 12699
+    },
+    "legitimate": {
+      "precision": 0.9975964748297503,
+      "recall": 0.9993311931514178,
+      "f1_score": 0.9984630805212161,
+      "support": 7476
+    },
+    "roc_auc": 0.9999914996908921
+  }
+}

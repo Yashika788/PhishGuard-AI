@@ -1,0 +1,33 @@
+
+# Python virtual environment
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Temporary files
+*.log
+*.tmp
+
+# Dataset - keep raw dataset private
+dataset/raw/*
+!dataset/raw/.gitkeep
+
+# Processed dataset - keep generated data private
+dataset/processed/*
+!dataset/processed/.gitkeep
+
+# Keep trained model files
+# Keep evaluation results and graphs

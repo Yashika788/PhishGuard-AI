@@ -1,0 +1,391 @@
+/* =====================================================
+   PHISHGUARD AI - PREMIUM CYBERSECURITY THEME
+   ===================================================== */
+
+
+/* MAIN BACKGROUND */
+
+.stApp {
+    background:
+        radial-gradient(
+            ellipse at 10% 0%,
+            rgba(14, 165, 233, 0.13),
+            transparent 35%
+        ),
+        radial-gradient(
+            ellipse at 95% 10%,
+            rgba(37, 99, 235, 0.12),
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            #080f1d,
+            #0b1423 55%,
+            #080f1d
+        ) !important;
+
+    color: #e2e8f0;
+}
+
+
+/* MAIN CONTENT */
+
+.block-container {
+    max-width: 1450px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+
+/* TYPOGRAPHY */
+
+h1, h2, h3 {
+    color: #f8fafc !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.5px;
+}
+
+h1 {
+    font-size: 2.4rem !important;
+}
+
+h2 {
+    font-size: 1.8rem !important;
+}
+
+h3 {
+    font-size: 1.25rem !important;
+}
+
+p, label {
+    color: #cbd5e1;
+}
+
+
+/* SIDEBAR */
+
+section[data-testid="stSidebar"] {
+    background: linear-gradient(
+        180deg,
+        #101e32,
+        #0a1423
+    ) !important;
+
+    border-right: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    color: #38bdf8 !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    color: #dbeafe !important;
+    font-weight: 600;
+}
+
+section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    color: #38bdf8 !important;
+}
+
+
+/* HERO BANNER */
+
+.hero {
+    background:
+        radial-gradient(
+            circle at 85% 20%,
+            rgba(14, 165, 233, 0.18),
+            transparent 35%
+        ),
+        linear-gradient(
+            120deg,
+            #10243d,
+            #123b59,
+            #10243d
+        );
+
+    border: 1px solid rgba(56, 189, 248, 0.38);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 22px;
+
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+.hero-label {
+    color: #38bdf8 !important;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.hero-title {
+    color: #f8fafc !important;
+    font-size: 34px;
+    font-weight: 850;
+    margin: 9px 0;
+}
+
+.hero-description {
+    color: #cbd5e1 !important;
+    font-size: 15px;
+    margin-bottom: 0;
+}
+
+
+/* BUTTONS */
+
+.stButton > button {
+    background: linear-gradient(
+        135deg,
+        #0284c7,
+        #2563eb
+    );
+
+    color: #ffffff !important;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 11px;
+    padding: 0.65rem 1.2rem;
+    font-weight: 700;
+
+    transition: all 0.25s ease;
+
+    box-shadow: 0 4px 18px rgba(2, 132, 199, 0.2);
+}
+
+.stButton > button:hover {
+    background: linear-gradient(
+        135deg,
+        #0ea5e9,
+        #3b82f6
+    );
+
+    border-color: #38bdf8;
+    transform: translateY(-2px);
+
+    box-shadow: 0 7px 24px rgba(14, 165, 233, 0.3);
+}
+
+
+/* INPUT FIELDS */
+
+.stTextInput input,
+.stTextArea textarea {
+    background: #111e30 !important;
+    color: #f8fafc !important;
+    border: 1px solid #334b67 !important;
+    border-radius: 11px !important;
+    min-height: 48px;
+}
+
+.stTextInput input:focus,
+.stTextArea textarea:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15) !important;
+}
+
+
+/* METRIC CARDS */
+
+div[data-testid="stMetric"] {
+    background: linear-gradient(
+        145deg,
+        #14243a,
+        #101c2d
+    );
+
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    padding: 20px;
+    border-radius: 16px;
+    min-height: 110px;
+
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+
+    transition: all 0.25s ease;
+}
+
+div[data-testid="stMetric"]:hover {
+    border-color: rgba(56, 189, 248, 0.6);
+    transform: translateY(-3px);
+}
+
+div[data-testid="stMetricLabel"] {
+    color: #94a3b8 !important;
+}
+
+div[data-testid="stMetricValue"] {
+    color: #38bdf8 !important;
+    font-weight: 800;
+}
+
+
+/* CUSTOM SECTION CARDS */
+
+.section-card {
+    background: linear-gradient(
+        145deg,
+        #14243a,
+        #101c2d
+    );
+
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    border-radius: 16px;
+    padding: 22px;
+
+    box-shadow: 0 7px 22px rgba(0, 0, 0, 0.18);
+
+    transition: all 0.25s ease;
+}
+
+.section-card:hover {
+    border-color: rgba(56, 189, 248, 0.55);
+    transform: translateY(-2px);
+}
+
+.small-muted {
+    color: #94a3b8 !important;
+    font-size: 13px;
+}
+
+
+/* STATUS LABEL */
+
+.status-pill {
+    display: inline-block;
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80 !important;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-radius: 30px;
+    padding: 6px 13px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* RESULT CARDS */
+
+.result-phishing {
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.result-safe {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 14px;
+    padding: 18px;
+}
+
+
+/* EXPANDERS */
+
+div[data-testid="stExpander"] {
+    background: #111c2e;
+    border: 1px solid #293f59;
+    border-radius: 13px;
+}
+
+
+/* DATAFRAMES */
+
+div[data-testid="stDataFrame"] {
+    border: 1px solid #29415c;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+
+/* ALERTS */
+
+div[data-testid="stAlert"] {
+    border-radius: 13px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+
+/* PROGRESS BAR */
+
+.stProgress > div > div > div > div {
+    background: linear-gradient(
+        90deg,
+        #0284c7,
+        #38bdf8
+    );
+
+    border-radius: 20px;
+}
+
+
+/* SELECT BOXES */
+
+div[data-baseweb="select"] > div {
+    background: #111e30;
+    border-color: #334b67;
+    border-radius: 10px;
+}
+
+
+/* TABS */
+
+.stTabs [data-baseweb="tab"] {
+    color: #94a3b8;
+    font-weight: 650;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #38bdf8 !important;
+}
+
+
+/* CHARTS AND IMAGES */
+
+.stImage img {
+    border-radius: 13px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+
+/* DIVIDERS */
+
+hr {
+    border-color: rgba(56, 189, 248, 0.18);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+
+/* FOOTER */
+
+footer {
+    visibility: hidden;
+}
+
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 768px) {
+
+    .block-container {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    div[data-testid="stMetric"] {
+        padding: 13px;
+    }
+
+    .hero {
+        padding: 22px;
+    }
+
+    .hero-title {
+        font-size: 26px;
+    }
+}
