@@ -192,14 +192,14 @@ def show_class_metrics(metrics, class_key, display_name):
 
 def navigate_to(destination):
 
-    st.session_state.navigation_widget = destination
+    st.session_state.navigation_target = destination
 
 
 def back_to_overview():
 
     st.session_state.auth_view = False
     st.session_state.pending_page = "Overview"
-    st.session_state.navigation_widget = "Overview"
+    st.session_state.navigation_target = "Overview"
     st.session_state.prediction_result = None
 
 
@@ -216,7 +216,7 @@ def logout_user():
 
     st.session_state.auth_view = False
     st.session_state.pending_page = "Overview"
-    st.session_state.navigation_widget = "Overview"
+    st.session_state.navigation_target = "Overview"
 
 
 def clear_previous_result():
@@ -404,7 +404,6 @@ def start_user_session(user):
     st.session_state.auth_notice = ""
     st.session_state.prediction_result = None
 
-    # After login/signup, open Overview Dashboard.
     st.session_state.pending_page = "Overview"
     st.session_state.navigation_target = "Overview"
 
@@ -427,13 +426,18 @@ def login_user(email, password):
 # 12. TOP HEADER AND LOGIN BUTTON
 # =========================================================
 
-header_left, header_right = st.columns(
-    [7, 2],
+# Responsive header with additional top spacing.
+
+header_spacer, header_left, header_right = st.columns(
+    [0.4, 6.6, 2],
     vertical_alignment="center",
 )
 
 with header_right:
 
+    # Keeps the account button away from the top edge.
+    st.write("")
+    st.write("")
     if st.session_state.authenticated:
 
         st.caption(
@@ -574,8 +578,6 @@ st.caption(
 # 15. AUTHENTICATION SCREEN
 # =========================================================
 
-# Any protected page selection opens authentication.
-
 if not st.session_state.authenticated and page != "Overview":
 
     st.session_state.pending_page = page
@@ -709,7 +711,6 @@ if st.session_state.auth_view and not st.session_state.authenticated:
 
                     if success:
 
-                        # Automatically authenticate the new user.
                         new_user = authenticate_user(
                             signup_email,
                             signup_password,
