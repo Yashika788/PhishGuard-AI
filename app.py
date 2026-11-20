@@ -78,7 +78,6 @@ defaults = {
 }
 
 for key, value in defaults.items():
-
     if key not in st.session_state:
         st.session_state[key] = value
 
@@ -86,11 +85,9 @@ for key, value in defaults.items():
 # Apply pending navigation BEFORE creating the sidebar radio.
 
 if st.session_state.navigation_target is not None:
-
     st.session_state.navigation_widget = (
         st.session_state.navigation_target
     )
-
     st.session_state.navigation_target = None
 
 
@@ -99,24 +96,19 @@ if st.session_state.navigation_target is not None:
 # =========================================================
 
 def render_html(html):
-
     st.html(textwrap.dedent(html).strip())
 
 
 def format_percent(value):
-
     try:
         return f"{float(value):.2%}"
-
     except (TypeError, ValueError):
         return "N/A"
 
 
 def format_threshold(value):
-
     try:
         return f"{float(value):.2f}"
-
     except (TypeError, ValueError):
         return "N/A"
 
@@ -154,7 +146,6 @@ def show_class_metrics(metrics, class_key, display_name):
     class_metrics = metrics.get(class_key)
 
     if not isinstance(class_metrics, dict):
-
         st.info(f"{display_name} metrics unavailable.")
         return
 
@@ -179,7 +170,6 @@ def show_class_metrics(metrics, class_key, display_name):
 
     try:
         support = f"{int(support):,}"
-
     except (TypeError, ValueError):
         support = "N/A"
 
@@ -191,7 +181,6 @@ def show_class_metrics(metrics, class_key, display_name):
 # =========================================================
 
 def navigate_to(destination):
-
     st.session_state.navigation_target = destination
 
 
@@ -220,7 +209,6 @@ def logout_user():
 
 
 def clear_previous_result():
-
     st.session_state.prediction_result = None
 
 
@@ -415,7 +403,6 @@ def login_user(email, password):
     user = authenticate_user(email, password)
 
     if user is None:
-
         st.error("Invalid email address or password.")
         return
 
@@ -426,8 +413,6 @@ def login_user(email, password):
 # 12. TOP HEADER AND LOGIN BUTTON
 # =========================================================
 
-# Responsive header with additional top spacing.
-
 header_spacer, header_left, header_right = st.columns(
     [0.4, 6.6, 2],
     vertical_alignment="center",
@@ -435,9 +420,9 @@ header_spacer, header_left, header_right = st.columns(
 
 with header_right:
 
-    # Keeps the account button away from the top edge.
     st.write("")
     st.write("")
+
     if st.session_state.authenticated:
 
         st.caption(
@@ -755,11 +740,8 @@ if page == "Overview":
     )
 
     if st.session_state.authenticated:
-
         history = st.session_state.scan_history
-
     else:
-
         history = []
 
     total, phishing, legitimate = get_scan_counts(history)
@@ -1351,20 +1333,35 @@ elif page == "Live Scan Analytics" and st.session_state.authenticated:
 
         st.divider()
 
+        # -------------------------------------------------
+        # FIXED: URL-WISE PHISHING SCORES
+        # -------------------------------------------------
+
         st.subheader("📈 URL-wise Phishing Scores")
 
         score_df = live_df[
-            ["url", "phishing_score"]
+            ["time", "url", "phishing_score"]
         ].copy()
 
-        score_df["Scan"] = [
-            f"Scan {i + 1}"
-            for i in range(len(score_df))
+        score_df["phishing_score"] = pd.to_numeric(
+            score_df["phishing_score"],
+            errors="coerce",
+        )
+
+        score_df = score_df.dropna(
+            subset=["phishing_score"]
+        )
+
+        score_df = score_df.iloc[::-1].reset_index(drop=True)
+
+        score_df["URL"] = [
+            f"{i + 1}. {str(url)[:45]}"
+            for i, url in enumerate(score_df["url"])
         ]
 
-        score_chart = score_df.set_index(
-            "Scan"
-        )["phishing_score"]
+        score_chart = score_df.set_index("URL")[
+            "phishing_score"
+        ]
 
         st.bar_chart(
             score_chart,
@@ -1372,7 +1369,7 @@ elif page == "Live Scan Analytics" and st.session_state.authenticated:
         )
 
         st.caption(
-            "Scores represent model outputs for individually scanned URLs."
+            "Each bar represents the phishing score of its corresponding URL."
         )
 
         st.divider()
